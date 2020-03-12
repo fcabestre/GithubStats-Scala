@@ -26,7 +26,7 @@ object Githubstats extends IOApp {
       val githubClient = new LiveGithubClient[IO](Logger(logBody = true, logHeaders = true)(client))
       for {
         repos <- githubClient.findUserRepositories(user)
-        stats <- repos.take(10).parTraverse(r => {
+        stats <- repos.parTraverse(r => {
           val languages = githubClient.findRepositoryLanguages(r)
           val contributors = githubClient.findRepositoryContributors(r)
           (languages, contributors).parMapN(

@@ -1,6 +1,5 @@
 package net.sigusr
 
-import cats.effect.Sync
 import cats.implicits._
 import cats.kernel.Monoid
 import io.circe.Decoder
@@ -15,27 +14,20 @@ import org.http4s.{Credentials, MediaType, Status, Uri}
 
 import scala.util.control.NoStackTrace
 
-case class Repository(name: String, languagesUrl: String, contributorsUrl: String) {
-  override def toString: String = {
-    s"""
-       |Name:             ${this.name}
-       |Languages URL:    ${this.languagesUrl}
-       |Contributors URL: ${this.contributorsUrl}
-       |""".stripMargin
-  }
-}
-
+case class Repository(name: String, languagesUrl: String, contributorsUrl: String)
 case class Contributor(login: String)
 
 trait GithubClient[F[_]] {
+  type Languages = Map[String, Int]
+
   def findUserRepositories(user: String): F[List[Repository]]
-  def findRepositoryLanguages(repo: Repository): F[Map[String, Int]]
+  def findRepositoryLanguages(repo: Repository): F[Languages]
   def findRepositoryContributors(repo: Repository): F[List[Contributor]]
 }
 
 case class SomeError(cause: String) extends NoStackTrace
 
-class LiveGithubClient[F[_]: JsonDecoder: MonadThrow: Sync](client: Client[F]) extends GithubClient[F] with Http4sClientDsl[F] {
+class LiveGithubClient[F[_]: JsonDecoder: MonadThrow](client: Client[F]) extends GithubClient[F] with Http4sClientDsl[F] {
 
   private def baseUri(user: String) = s"https://api.github.com/users/$user/repos"
 
@@ -50,7 +42,7 @@ class LiveGithubClient[F[_]: JsonDecoder: MonadThrow: Sync](client: Client[F]) e
       client.fetch[R](GET(uri, contentHeader, authHeader)) { r =>
         r.status match {
           case Status.Ok => r.asJsonDecode[R]
-          case Status.NoContent => Sync[F].pure(Monoid[R].empty)
+          case Status.NoContent => MonadThrow[F].pure(Monoid[R].empty)
           case _ => SomeError(Option(r.status.reason).getOrElse("Unknown")).raiseError[F, R]
         }
       }
@@ -58,7 +50,7 @@ class LiveGithubClient[F[_]: JsonDecoder: MonadThrow: Sync](client: Client[F]) e
 
   def findUserRepositories(user: String): F[List[Repository]] = get(baseUri(user))
 
-  def findRepositoryLanguages(repo: Repository): F[Map[String, Int]] = get(repo.languagesUrl)
+  def findRepositoryLanguages(repo: Repository): F[Languages] = get(repo.languagesUrl)
 
   def findRepositoryContributors(repo: Repository): F[List[Contributor]] = get(repo.contributorsUrl)
 }

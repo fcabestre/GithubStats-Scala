@@ -27,12 +27,11 @@ trait GithubClient[F[_]] {
 
 case class SomeError(cause: String) extends NoStackTrace
 
-class LiveGithubClient[F[_]: JsonDecoder: MonadThrow](client: Client[F]) extends GithubClient[F] with Http4sClientDsl[F] {
+class LiveGithubClient[F[_]: JsonDecoder: MonadThrow](config: Config, client: Client[F]) extends GithubClient[F] with Http4sClientDsl[F] {
 
   private def baseUri(user: String) = s"https://api.github.com/users/$user/repos"
 
-  private val token = "a8c6d8906ef4abac6b2cea4068540f6a189cb2d5"
-  private val authHeader = Authorization(Credentials.Token(CaseInsensitiveString("Token"), token))
+  private val authHeader = Authorization(Credentials.Token(CaseInsensitiveString("Token"), config.githubToken.value))
   private val contentHeader = Accept(MediaType.application.json)
 
   private def get[R: Decoder: Monoid](uri: String): F[R] = Uri

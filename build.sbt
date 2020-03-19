@@ -48,6 +48,7 @@ val ShapelessVersion = "2.3.3"
 val FS2Version = "2.2.2"
 val AmmoniteVersion = "2.0.0"
 val Http4sVersion = "0.21.0"
+val CirisVersion = "1.0.4"
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
@@ -66,6 +67,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % CatsVersion,
   "org.typelevel" %% "cats-effect" % CatsEffectVersion,
   "dev.profunktor" %% "console4cats" % Console4CatsVersion,
+  "is.cir" %% "ciris" % CirisVersion,
 
   "org.http4s" %% "http4s-dsl" % Http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
